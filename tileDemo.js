@@ -1,7 +1,7 @@
-let w = 0, h = 0;
-let p = 0, q = 0;
-const tile = new Image();
 const mapWidth = 128, mapHeight = 128;
+let w = 0, h = 0;
+let cameraX = mapWidth/2, cameraY = mapHeight/2, cameraScale = 1;
+let tile = [];
 
 let map = [];
 
@@ -13,22 +13,20 @@ function fixSize() {
     canvas.height = h;
 }
 
-let pressedKeys = [];
-
-function keyDown(event) {
-    pressedKeys[event.key] = true;
-}
-
-function keyUp(event) {
-    pressedKeys[event.key] = false;
-}
+let pressedKeys = {};
 
 function pageLoad() {
+
+    for (let i = 0; i < 12; i++) {
+        tile[i] = new Image()
+        tile[i].src = (i+1) + ".png";
+    }
 
     for (let x = 0; x < mapWidth; x++) {
         let row = [];
         for (let y = 0; y < mapHeight; y++) {
-            row.push({tile});
+            let r = Math.floor(Math.random() * 12);
+            row.push({tile: tile[r]});
         }
         map.push(row);
     }
@@ -36,31 +34,40 @@ function pageLoad() {
     window.addEventListener("resize", fixSize);
     fixSize();
 
-    window.addEventListener("keydown", keyDown);
-    window.addEventListener("keyup", keyUp);
+    window.addEventListener("keydown", event => pressedKeys[event.key] = true);
+    window.addEventListener("keyup", event => pressedKeys[event.key] = false);
 
-    tile.src = "01.png";
-    tile.onload = () => window.requestAnimationFrame(redraw);
+    window.requestAnimationFrame(redraw);
 
 }
 
-function redraw() {
+let lastTimestamp = 0;
+
+function redraw(timestamp) {
+
+    const frameLength = (lastTimestamp - timestamp) / 1000;
+    lastTimestamp = timestamp;
 
     for (let key in pressedKeys) {
       if (pressedKeys[key]) {
-        console.log(key);
         switch (key) {
           case 'ArrowUp':
-            q--;
+            cameraY += 5*frameLength/cameraScale;
             break;
           case 'ArrowDown':
-            q++;
+            cameraY -= 5*frameLength/cameraScale;
             break;
           case 'ArrowLeft':
-            p--;
+            cameraX += 5*frameLength/cameraScale;
             break;
           case 'ArrowRight':
-            p++;
+            cameraX -= 5*frameLength/cameraScale;
+            break;
+         case 'PageUp':
+            cameraScale *= 1-frameLength;
+            break;
+         case 'PageDown':
+            cameraScale /= 1-frameLength;
             break;
         }
       }
@@ -78,9 +85,11 @@ function redraw() {
     for (let i = 0; i < mapWidth; i++) {
         for (let j = 0; j < mapHeight; j++) {
             if (map[i][j] !== null) {
-                let u = p * 10 + i * tileWidth;
-                let v = q * 10 + j * tileWidth;
-                context.drawImage(map[i][j].tile, 0, 0, 128, 128, u, v, tileWidth, tileWidth);
+                let u = w/2 + (i - cameraX) * tileWidth*cameraScale;
+                let v = h/2 + (j - cameraY) * tileHeight*cameraScale;
+                if (u > -tileWidth*cameraScale && v > -tileHeight*cameraScale && u < w && v < h) {
+                    context.drawImage(map[i][j].tile, 0, 0, 128, 128, u, v, tileWidth*cameraScale, tileHeight*cameraScale);
+                }
             }
         }
     }
