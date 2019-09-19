@@ -1,13 +1,14 @@
+"use strict";
+
 const mapWidth = 128, mapHeight = 128;
 let w = 0, h = 0;
 let cameraX = mapWidth/2, cameraY = mapHeight/2, cameraScale = 1;
-let cursorX = 0, cursorY = 0;
+let cursorX = 0, cursorY = 0, currentTile = 0;
 let tile = [];
-let cursorTile;
 
 let map = [];
 
-let mousePosition = {x: 0, y: 0}, lastMousePosition = {x: 0, y: 0}, leftMouseDown = false, rightMouseDown = false;
+let mousePosition = {x: 0, y: 0}, lastMousePosition = {x: 0, y: 0}, leftMouseDown = false, rightMouseDown = false, keyDown = false;
 
 let dragging = false, dragStartX = -1, dragStartY, dragEndX, dragEndY;
 
@@ -27,14 +28,11 @@ function pageLoad() {
         tile[i] = new Image()
         tile[i].src = (i+1) + ".png";
     }
-    cursorTile = new Image();
-    cursorTile.src = 'cursor.png';
 
     for (let x = 0; x < mapWidth; x++) {
         let row = [];
         for (let y = 0; y < mapHeight; y++) {
-            let r = Math.floor(Math.random() * 12);
-            row.push({tile: tile[r]});
+            row.push({});
         }
         map.push(row);
     }
@@ -43,7 +41,10 @@ function pageLoad() {
     fixSize();
 
     window.addEventListener("keydown", event => pressedKeys[event.key] = true);
-    window.addEventListener("keyup", event => pressedKeys[event.key] = false);
+    window.addEventListener("keyup", event => {
+        keyDown = false;
+        pressedKeys[event.key] = false;
+    });
 
     const canvas = document.getElementById('tileCanvas');
     canvas.addEventListener('mousedown', event => {
@@ -119,7 +120,7 @@ function redraw(timestamp) {
     if (cursorY >= mapHeight) cursorY = mapHeight - 1;
 
     if (leftMouseDown) {
-        map[cursorX][cursorY].tile = tile[0];
+        map[cursorX][cursorY].tile = tile[currentTile];
     }
 
     if (rightMouseDown) {
@@ -127,6 +128,15 @@ function redraw(timestamp) {
         cameraY += (lastMousePosition.y - mousePosition.y) / scaledTileHeight;
         lastMousePosition.x = mousePosition.x
         lastMousePosition.y = mousePosition.y;
+    }
+
+    let alpha, dragX1, dragY1, dragX2, dragY2;
+    if (dragStartX != -1) {
+        alpha = Math.floor(50*(1+Math.cos(timestamp/200)) + 50);
+        dragX1 = dragStartX > dragEndX ? dragEndX : dragStartX;
+        dragY1 = dragStartY > dragEndY ? dragEndY : dragStartY;
+        dragX2 = dragStartX > dragEndX ? dragStartX : dragEndX;
+        dragY2 = dragStartY > dragEndY ? dragStartY : dragEndY;
     }
 
     for (let key in pressedKeys) {
@@ -152,20 +162,91 @@ function redraw(timestamp) {
             cameraScale /= 1-frameLength;
             if (cameraScale < 0.25) cameraScale = 0.25;
             break;
-          case 'Home':
+        case 'Home':
             cameraScale = 1;
             break;
-          case 'Shift':
+         case 'Shift':
             if (!dragging) {
-              dragStartX = cursorX;
-              dragStartY = cursorY;
-              dragging = true;
+                dragStartX = cursorX;
+                dragStartY = cursorY;
+               dragging = true;
             }
             dragEndX = cursorX;
             dragEndY = cursorY;
             break;
-          case 'Escape':
+        case 'Escape':
             dragStartX = -1;
+            break;
+        case 'Delete':
+            map[cursorX][cursorY] = {};
+            break;
+        case '[':
+            if (!keyDown) {
+                currentTile--;
+                if (currentTile < 0) currentTile = tile.length-1;
+                keyDown = true;
+            }
+            break;
+        case ']':
+            if (!keyDown) {
+                currentTile++;
+                if (currentTile >= tile.length) currentTile = 0;
+                keyDown = true;
+            }
+            break;
+        case 'f':
+            if (dragStartX != -1) {
+                for (let i = dragX1; i <= dragX2; i++) {
+                    for (let j = dragY1; j <= dragY2; j++) {
+                        map[i][j].tile = tile[currentTile];
+                    }
+                }
+            }
+            break;
+        case 'd':
+            if (dragStartX != -1) {
+                for (let i = dragX1; i <= dragX2; i++) {
+                    for (let j = dragY1; j <= dragY2; j++) {
+                        if (i - dragX1 + cursorX < mapWidth && j - dragY1 + cursorY < mapHeight) {
+                            map[i - dragX1 + cursorX][j - dragY1 + cursorY].tile = map[i][j].tile;
+                        }
+                    }
+                }
+            }
+            break;
+        case 'm':
+            if (dragStartX != -1) {
+                for (let i = dragX1; i <= dragX2; i++) {
+                    for (let j = dragY1; j <= dragY2; j++) {
+                        if (i - dragX1 + cursorX < mapWidth && j - dragY1 + cursorY < mapHeight) {
+                            map[i - dragX1 + cursorX][j - dragY1 + cursorY].tile = map[dragX2-(i-dragX1)][j].tile;
+                        }
+                    }
+                }
+            }
+            break;
+        case 'k':
+            if (dragStartX != -1) {
+                for (let i = dragX1; i <= dragX2; i++) {
+                    for (let j = dragY1; j <= dragY2; j++) {
+                        if (i - dragX1 + cursorX < mapWidth && j - dragY1 + cursorY < mapHeight) {
+                            map[i - dragX1 + cursorX][j - dragY1 + cursorY].tile = map[i][dragY2-(j-dragY1)].tile;
+                        }
+                    }
+                }
+            }
+            break;
+        case 'l':
+            if (dragStartX != -1) {
+                for (let i = dragX1; i <= dragX2; i++) {
+                    for (let j = dragY1; j <= dragY2; j++) {
+                        if (i - dragX1 + cursorX < mapWidth && j - dragY1 + cursorY < mapHeight) {
+                            map[i - dragX1 + cursorX][j - dragY1 + cursorY].tile = map[dragX2-(i-dragX1)][dragY2-(j-dragY1)].tile;
+                        }
+                    }
+                }
+            }
+            break;
         }
       } else {
         if (key == 'Shift') {
@@ -180,24 +261,29 @@ function redraw(timestamp) {
     context.fillStyle = '#000088';
     context.fillRect(0, 0, w, h);
 
-    let alpha = Math.floor(Math.abs((timestamp - fpsTimestamp) - 500)/4) + 50;
-    if (alpha < 16) alpha = 16;
-    if (alpha > 250) alpha = 250;
-
     for (let i = 0; i < mapWidth; i++) {
         for (let j = 0; j < mapHeight; j++) {
             if (map[i][j] !== null) {
                 let u = w/2 + (i - cameraX) * scaledTileWidth;
                 let v = h/2 + (j - cameraY) * scaledTileHeight;
                 if (u > -scaledTileWidth && v > -scaledTileHeight && u < w && v < h) {
-                    context.drawImage(map[i][j].tile, 0, 0, 128, 128, u, v, scaledTileWidth, scaledTileHeight);
-                    if (dragStartX != -1 && i >= dragStartX && j >= dragStartY && i <= dragEndX && j <= dragEndY) {
-                      context.fillStyle = '#00FFFF' + alpha.toString(16);
-                      context.fillRect(u, v, scaledTileWidth, scaledTileHeight);
+
+                    if (map[i][j] !== {} && !(typeof map[i][j].tile === "undefined" || map[i][j].tile === null)) {
+                        context.drawImage(map[i][j].tile, 0, 0, 128, 128, u, v, scaledTileWidth, scaledTileHeight);
                     }
+
+                    if (dragStartX != -1) {
+                        if (i >= dragX1 && j >= dragY1 && i <= dragX2 && j <= dragY2) {
+                          context.fillStyle = '#00FFFF' + alpha.toString(16);
+                          context.fillRect(u, v, scaledTileWidth, scaledTileHeight);
+                        }
+                    }
+
                     if (i === cursorX && j === cursorY) {
-                      context.drawImage(cursorTile, 0, 0, 128, 128, u, v, scaledTileWidth, scaledTileHeight);
+                        context.fillStyle = '#FFFFFF88';
+                        context.fillRect(u, v, scaledTileWidth, scaledTileHeight);
                     }
+
                 }
             }
         }
