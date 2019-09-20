@@ -273,7 +273,7 @@ function redraw(timestamp) {
         for (let i = -1; i <= mapWidth; i += mapWidth+1) {
             let u = w/2 + (i - cameraX) * scaledTileWidth;
             let v = h/2 + (j - cameraY) * scaledTileHeight;
-            if (u > -scaledTileWidth && v > -scaledTileHeight && u < w && v < h) {
+            if (u > -scaledTileWidthh && v > -scaledTileHeight && u < w && v < h) {
                 context.fillRect(u, v, scaledTileWidth, scaledTileHeight);
             }
         }
