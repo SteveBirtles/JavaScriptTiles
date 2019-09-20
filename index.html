@@ -9,6 +9,11 @@
   </head>
 
   <body onload="pageLoad()">
+      <div style="position: absolute; margin: 10px; color:#00000000; ">
+          <input type="file" accept='.json' id="uploader" onchange="handleUpload(this.files)">
+            <br/>
+          <button style="width:83px; margin-top:5px;" onclick="handleDownload()">Save file</button>
+      </div>
     <canvas id="tileCanvas" />
   </body>
 
