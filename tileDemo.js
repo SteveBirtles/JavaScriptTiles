@@ -11,7 +11,7 @@ let map = [], mapFilename = 'map.json';
 
 let mousePosition = {x: 0, y: 0}, lastMousePosition = {x: 0, y: 0}, leftMouseDown = false, rightMouseDown = false, keyDown = false;
 
-let dragging = false, dragStartX = -1, dragStartY, dragEndX, dragEndY, showGrid = false;
+let dragging = false, dragStartX = -1, dragStartY, dragEndX, dragEndY, showGrid = false, showHelp = true;
 
 function fixSize() {
     w = window.innerWidth;
@@ -182,7 +182,7 @@ function redraw(timestamp) {
                 dragStartX = 0;
                 dragStartY = 0;
                 dragEndX = mapWidth-1;
-                dragEndY = mapHeight-1;                
+                dragEndY = mapHeight-1;
                 break;
                 case 'Delete':
                 map[cursorX][cursorY] = {};
@@ -208,6 +208,12 @@ function redraw(timestamp) {
                 case 'g': //grid
                 if (!keyDown) {
                     showGrid = !showGrid;
+                    keyDown = true;
+                }
+                case 'h': //help
+                if (!keyDown) {
+                    showHelp = !showHelp
+                    document.getElementById("helpText").style.display = showHelp ? "block" : "none";
                     keyDown = true;
                 }
                 break;
@@ -252,20 +258,24 @@ function redraw(timestamp) {
     context.fillStyle = '#000088';
     context.fillRect(0, 0, w, h);
 
+    context.fillStyle = '#FF000044';
+
     for (let i = -1; i <= mapWidth; i++) {
         for (let j = -1; j <= mapHeight; j += mapHeight+1) {
             let u = w/2 + (i - cameraX) * scaledTileWidth;
             let v = h/2 + (j - cameraY) * scaledTileHeight;
-            context.fillStyle = '#FF000044';
-            context.fillRect(u, v, scaledTileWidth, scaledTileHeight);
+            if (u > -scaledTileWidth && v > -scaledTileHeight && u < w && v < h) {
+                context.fillRect(u, v, scaledTileWidth, scaledTileHeight);
+            }
         }
     }
-    for (let j = -1; j <= mapHeight; j++) {
+    for (let j = 0; j < mapHeight; j++) {
         for (let i = -1; i <= mapWidth; i += mapWidth+1) {
             let u = w/2 + (i - cameraX) * scaledTileWidth;
             let v = h/2 + (j - cameraY) * scaledTileHeight;
-            context.fillStyle = '#FF000044';
-            context.fillRect(u, v, scaledTileWidth, scaledTileHeight);
+            if (u > -scaledTileWidth && v > -scaledTileHeight && u < w && v < h) {
+                context.fillRect(u, v, scaledTileWidth, scaledTileHeight);
+            }
         }
     }
 
@@ -321,9 +331,9 @@ function handleUpload(files) {
 
     let reader = new FileReader();
     reader.onload = function(){
-      let mapJSON = reader.result;
-      map = JSON.parse(mapJSON);
-      document.getElementById('uploader').value = ''
+        let mapJSON = reader.result;
+        map = JSON.parse(mapJSON);
+        document.getElementById('uploader').value = ''
     };
     reader.readAsText(files[0]);
 

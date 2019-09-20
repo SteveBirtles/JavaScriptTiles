@@ -14,7 +14,27 @@
             <br/>
           <button style="width:83px; margin-top:5px;" onclick="handleDownload()">Save file</button>
       </div>
-    <canvas id="tileCanvas" />
+      <div id="helpText" style="position: absolute; margin: 10px; left:0px; top:160px; color:silver; z-index: 99;">
+          <div>Arrows / right click drag - Move map</div>
+          <div>PageUp / PageDown / Mouse Wheel - Zoom</div>
+          <div>Home - Reset zoom</div>
+          <div>Left click - Draw tile</div>
+          <div>[ / ] - Choose tile</div>
+          <div>P - Pickup tile</div>
+          <div>Del - Clear tile</div>
+          <div>Shift - Make selection</div>
+          <div>Esc - Clear selection</div>
+          <div>A - Select all</div>
+          <div>D - Duplicate selection</div>
+          <div>X - Cut (move) selection</div>
+          <div>B - Clear (bin) selection</div>
+          <div>M - Duplicate mirrored</div>
+          <div>K - Duplicate flipped</div>
+          <div>L - Duplicate mirrored & flipped</div>
+          <div>G - Toggle grid</div>
+          <div>H - Toggle help</div>
+      </div>
+      <canvas id="tileCanvas" />
   </body>
 
 </html>
